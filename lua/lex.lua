@@ -5,12 +5,20 @@ TokenType = {
     Primative = 2,
     Literal = 3,
     Operator = 4,
-    Keyword = 5
+    Keyword = 5,
+    OpenParen = 6,
+    CloseParen = 7,
+    OpenBracket = 8,
+    CloseBracket = 9,
+    OpenSqBracket = 10,
+    CloseSqBracket = 11,
+    Comma
 }
 
-local operators = "+-*/="
-local primatives = "int float char short long void"
-local keywords = "if else while for break return unsigned"
+local operators = "+-*/=&<>"
+local primatives = " int float char short long void "
+local keywords = " if else while for break return unsigned "
+local alpha_num = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 function Token:new(token_type, value)
     new_object = { token_type = token_type, value = value }
@@ -49,7 +57,7 @@ function Tokenizer:new(source)
         char = "", 
         pos = 1, 
         token_stream = TokenStream:new(),
-        halt = false
+        halt = false,
     }
 
     self.__index = self
@@ -58,6 +66,21 @@ function Tokenizer:new(source)
 end
 
 function Tokenizer:parse()
+    local function contains(str, char)
+        local p = 1
+        local s = str:sub(p, p)
+        while s ~= "" do
+            if s == char then
+                return true
+            end
+
+            p = p + 1
+            s = str:sub(p, p)
+        end
+
+        return false
+    end
+
     while not self.halt do  
         self:read_char()
         if self.char == nil then
@@ -67,10 +90,24 @@ function Tokenizer:parse()
         if string.find(self.char, "%s") == nil then
             if string.find(self.char, "%d") then
                 table.insert(self.token_stream, self:read_num())
-            elseif string.find(operators, self.char) then
+            elseif contains(operators, self.char) then
                 table.insert(self.token_stream, self:read_operator())
             elseif self.char == ";" then
                 table.insert(self.token_stream, Token:new(TokenType.Semicolon))
+            elseif self.char == "(" then
+                table.insert(self.token_stream, Token:new(TokenType.OpenParen))
+            elseif self.char == ")" then
+                table.insert(self.token_stream, Token:new(TokenType.CloseParen))
+            elseif self.char == "{" then
+                table.insert(self.token_stream, Token:new(TokenType.OpenBracket))
+            elseif self.char == "}" then
+                table.insert(self.token_stream, Token:new(TokenType.CloseBracket))
+            elseif self.char == "[" then
+                table.insert(self.token_stream, Token:new(TokenType.OpenSqBracket))
+            elseif self.char == "]" then
+                table.insert(self.token_stream, Token:new(TokenType.CloseSqBracket))
+            elseif self.char == "," then
+                table.insert(self.token_stream, Token:new(TokenType.Comma))
             else
                 local token = self:read_primative()
                 if token then
@@ -106,14 +143,20 @@ function Tokenizer:read_char()
     end
 end
 
+function Tokenizer:peek()
+    return self.source:sub(self.pos, self.pos)
+end
+
 function Tokenizer:rewind(num)
-    self.pos = self.pos - num
+    self.pos = self.pos - num - 1
+    self:read_char()
 end
 
 function Tokenizer:consume()
     local str = self.char
     local num = 0
-    while string.find(self.char, "%s") == nil do
+    while self:peek():match("%w") ~= nil do
+        self:read_char()
         str = str..self.char
         num = num + 1
     end
@@ -138,7 +181,7 @@ function Tokenizer:read_primative()
 
     local t, num = self:consume()
 
-    if string.find(primatives, t) ~= nil then
+    if string.find(primatives, " "..t.." ") ~= nil then
         return Token:new(TokenType.Primative, t)
     end
 
@@ -153,7 +196,7 @@ function Tokenizer:read_keyword()
 
     local t, num = self:consume()
 
-    if string.find(keywords, t) ~= nil then
+    if string.find(keywords, " "..t.." ") ~= nil then
         return Token:new(TokenType.Keyword, t)
     end
 
@@ -162,7 +205,7 @@ function Tokenizer:read_keyword()
 end
 
 function Tokenizer:read_ident()
-    if string.find(self.char, "%a") == nil then
+    if self.char:match("%a") == nil then
         self:expected("Identifier")
     end
 

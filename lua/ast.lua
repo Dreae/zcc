@@ -10,7 +10,10 @@ NodeType = {
     CharLiteral=5,
     Add=6,
     Subtract=7,
-    Assignment=8
+    Multiply=8,
+    Divide=9,
+    Assignment=10,
+    Block=11
 }
 
 function Node:new(node_type) 
@@ -49,7 +52,26 @@ function IntLiteral:generate()
     return "push "..self.value.."\n"
 end
 
-Add = Node:new(NodeType.Add)
+BinOp = Node:new()
+function BinOp:new(node_type, ins)
+    new_object = { node_type = node_type, ins = ins }
+    self.__index = self
+
+    return setmetatable(new_object, self)
+end
+
+function BinOp:generate()
+    local code = ""
+    code = code..self.left:generate()
+    code = code..self.right:generate()
+    code = code.."pop eax\n"
+    code = code.."pop ebx\n"
+    code = code..self.ins.." eax, ebx\n"
+
+    return code
+end
+
+Add = BinOp:new(NodeType.Add, "add")
 function Add:new(left, right)
     new_object = { left = left, right = right }
     self.__index = self
@@ -57,13 +79,26 @@ function Add:new(left, right)
     return setmetatable(new_object, self)
 end
 
-function Add:generate()
-    local code = ""
-    code = code..self.left:generate()
-    code = code..self.right:generate()
-    code = code.."pop eax\n"
-    code = code.."pop ebx\n"
-    code = code.."add eax, ebx\n"
+Subtract = BinOp:new(NodeType.Subtract, "sub")
+function Subtract:new(left, right)
+    new_object = { left = left, right = right }
+    self.__index = self
 
-    return code
+    return setmetatable(new_object, self)
+end
+
+Multiply = BinOp:new(NodeType.Multiply, "mul")
+function Multiply:new(left, right)
+    new_object = { left = left, right = right }
+    self.__index = self
+
+    return setmetatable(new_object, self)
+end
+
+Divide = BinOp:new(NodeType.Divide, "div")
+function Divide:new(left, right)
+    new_object = { left = left, right = right }
+    self.__index = self
+
+    return setmetatable(new_object, self)
 end

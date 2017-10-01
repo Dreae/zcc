@@ -1,10 +1,16 @@
 Code = {}
-
 function Code:new()
-    new_object = { code = "" }
+    new_object = { 
+        code = "",
+        registers = Registers:new()
+    }
     self.__index = self
 
     return setmetatable(new_object, self)
+end
+
+function Code:push_variable(var)
+    
 end
 
 function Code:emit(code)
@@ -18,4 +24,17 @@ function generate_code(ast)
     end
 
     return code
+end
+
+Registers = {}
+function Registers:new()
+    new_object = {
+        eax = "",
+        ebx = "",
+        ecx = "",
+        edx = ""
+    }
+    self.__index = self
+
+    return setmetatable(new_object, self)
 end

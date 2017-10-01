@@ -39,6 +39,10 @@ function Parser:peek()
     return self.token_stream[self.pos]
 end
 
+function Parser:read_statement()
+    
+end
+
 function Parser:read_expression()
     local node = IntLiteral:new(self.current_token.value)
 
@@ -47,8 +51,15 @@ function Parser:read_expression()
         local op = self.current_token
         self:consume()
         local right = self:read_expression()
+        -- TODO: Make this a lookup table
         if op.value == '+' then
             return Add:new(node, right)
+        elseif op.value == '-' then
+            return Subtract:new(node, right)
+        elseif op.value == "*" then
+            return Multiply:new(node, right)
+        elseif op.value == "/" then
+            return Divide:new(node, right)
         end
     elseif self.current_token.token_type == TokenType.Semicolon then
         return node
