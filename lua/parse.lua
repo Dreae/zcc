@@ -1,9 +1,7 @@
-require "lua/ast"
-
 Parser = {}
 
 function Parser:new(token_stream)
-    new_object = { 
+    local new_object = { 
         token_stream = token_stream, 
         root_node = Node:new(NodeType.Root),
         halt = false,
@@ -22,9 +20,7 @@ function Parser:parse()
             return self.root_node
         end
 
-        if self.current_token.token_type == TokenType.Literal then
-            table.insert(self.root_node, self:read_expression())
-        end
+        table.insert(self.root_node, self:read_statement())
     end
 end
 
@@ -44,7 +40,12 @@ function Parser:read_statement()
 end
 
 function Parser:read_expression()
-    local node = IntLiteral:new(self.current_token.value)
+    local node = nil
+    if self.current_token.token_type == TokenType.Literal then
+        node = IntLiteral:new(self.current_token.value)
+    elseif self.current_token.token_type == TokenType.Ident then
+        node = Ident:new(self.current_token.value)
+    end
 
     self:consume()
     if self.current_token.token_type == TokenType.Operator then

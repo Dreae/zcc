@@ -12,16 +12,17 @@ TokenType = {
     CloseBracket = 9,
     OpenSqBracket = 10,
     CloseSqBracket = 11,
-    Comma
+    Comma = 12,
+    ConstString = 13
 }
 
 local operators = "+-*/=&<>"
 local primatives = " int float char short long void "
-local keywords = " if else while for break return unsigned "
+local keywords = " if else while for break return unsigned typedef struct union "
 local alpha_num = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 function Token:new(token_type, value)
-    new_object = { token_type = token_type, value = value }
+    local new_object = { token_type = token_type, value = value }
     self.__index = self 
 
     return setmetatable(new_object, self)
@@ -34,7 +35,7 @@ end
 TokenStream = {}
 
 function TokenStream:new()
-    new_object = { has_error = false, msg = "" }
+    local new_object = { has_error = false, msg = "" }
     self.__index = self
 
     return setmetatable(new_object, self)
@@ -52,7 +53,7 @@ end
 Tokenizer = {}
 
 function Tokenizer:new(source)
-    new_object = { 
+    local new_object = { 
         source = source, 
         char = "", 
         pos = 1, 
@@ -108,6 +109,8 @@ function Tokenizer:parse()
                 table.insert(self.token_stream, Token:new(TokenType.CloseSqBracket))
             elseif self.char == "," then
                 table.insert(self.token_stream, Token:new(TokenType.Comma))
+            elseif self.char == '"' then
+                table.insert(self.token_stream, self:read_string())
             else
                 local token = self:read_primative()
                 if token then
@@ -144,7 +147,11 @@ function Tokenizer:read_char()
 end
 
 function Tokenizer:peek()
-    return self.source:sub(self.pos, self.pos)
+    if self.pos == #self.source + 1 then
+        return nil
+    else
+        return self.source:sub(self.pos, self.pos)
+    end
 end
 
 function Tokenizer:rewind(num)
@@ -214,6 +221,24 @@ end
 
 function Tokenizer:read_operator()
     return Token:new(TokenType.Operator, self.char)
+end
+
+function Tokenizer:read_string()
+    local next_char = self:peek()
+    local str = ""
+    while next_char ~= "\n" and next_char ~= '"' and next_char ~= nil do
+        str = str..next_char
+        self:read_char()
+
+        next_char = self:peek()
+    end
+    if next_char == "\n" then
+        self:expected('"')
+    else
+        self:read_char()
+    end
+
+    return Token:new(TokenType.ConstString, str)
 end
 
 function tokenize_source(source)

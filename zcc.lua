@@ -1,8 +1,12 @@
 local argparse = require "argparse"
 
+require "lua/util"
 require "lua/lex"
 require "lua/parse"
+require "lua/ast"
 require "lua/generation"
+
+require("mobdebug").start()
 
 local function read_sources()
     local parser = argparse("zcc", "A C compiler for the ZCPU")
